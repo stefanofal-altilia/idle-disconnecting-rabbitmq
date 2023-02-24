@@ -1,24 +1,16 @@
+import logging
+
 import pika
 from pika import ConnectionParameters
 
+LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
+              '-35s %(lineno) -5d: %(message)s')
+LOGGER = logging.getLogger(__name__)
+
 
 def handle(ch, method, properties, body):
-    """
-    Handle a received Message on a queue. The method execute the action's Callback function and then
-    give an ack to the Message.
-    :param ch:
-    :type ch:
-    :param method:
-    :type method:
-    :param properties:
-    :type properties:
-    :param body:
-    :type body:
-    :return: None
-    :rtype:
-    """
     try:
-        print("Method called handle")
+        print('Method started handle')
         print("Message with id {} arrived".format(properties.correlation_id))
         body = "I recevied a message!"
         ch.basic_publish(exchange='',
@@ -31,22 +23,22 @@ def handle(ch, method, properties, body):
     except BaseException as e:
         print(
             "Fatal error on message broker class {} method {} error {}".format("RabbitMQConsumer", "handle",
-                                                                               str(e)))
+                                                                                       str(e)))
+
 
 
 def consume_select_connection():
     print("Method called consume_select_connection")
-
     def on_open(conn):
-        print("Method called on_open")
+        print('Method started on_open')
         conn.channel(on_open_callback=on_channel_open)
         print("Method ended on_open")
 
     def on_channel_open(channel):
         print("Method called on_channel_open")
-        channel.queue_declare("annotation-request-queue", passive=False, durable=True,
+        channel.queue_declare("test-request-queue", passive=False, durable=True,
                               exclusive=False, auto_delete=False)
-        channel.basic_consume("annotation-request-queue", on_message_callback=handle)
+        channel.basic_consume("test-request-queue", on_message_callback=handle)
         print("Method ended on_channel_open")
 
     credentials = pika.PlainCredentials(username="guest",
@@ -68,9 +60,9 @@ def consume_select_connection():
         # Gracefully close the connection
         connection.close()
     except BaseException as e:
-        print(("BASE exception: ", str(e)))
+        LOGGER.info(("BASE exception: ", str(e)))
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
     consume_select_connection()
